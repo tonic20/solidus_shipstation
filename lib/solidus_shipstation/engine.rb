@@ -17,6 +17,7 @@ module SolidusShipstation
         preference :shipstation_weight_units, :string
         preference :shipstation_ssl_encrypted, :boolean, default: true
         preference :shipstation_capture_at_notification, :boolean, default: false
+        preference :shipstation_basic_auth_enabled, :boolean, default: true
       end
     end
 
