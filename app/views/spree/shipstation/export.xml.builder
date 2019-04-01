@@ -29,28 +29,32 @@ xml.Orders(pages: (@shipments.total_count/50.0).ceil) {
         Spree::ExportHelper.address(xml, order, :ship)
       }
       xml.Items {
-        shipment.line_items.each do |line|
+        shipment.manifest.each do |manifest|
+          line = manifest.line_item
           variant = line.variant
-          xml.Item {
-            xml.SKU         variant.sku
-            xml.Name        [variant.product.name, variant.options_text].join(' ')
-            xml.ImageUrl    Spree::ExportHelper.pnp_product_image(variant)
-            xml.Weight      variant.weight.to_f
-            xml.WeightUnits Spree::Config.shipstation_weight_units
-            xml.Quantity    line.quantity
-            xml.UnitPrice   line.price
+          quantity = manifest.quantity - manifest.states.fetch('canceled', 0)
+          if quantity > 0
+            xml.Item {
+              xml.SKU         variant.sku
+              xml.Name        [variant.product.name, variant.options_text].join(' ')
+              xml.ImageUrl    Spree::ExportHelper.pnp_product_image(variant)
+              xml.Weight      variant.weight.to_f
+              xml.WeightUnits Spree::Config.shipstation_weight_units
+              xml.Quantity    quantity
+              xml.UnitPrice   line.price
 
-            if variant.option_values.present?
-              xml.Options {
-                variant.option_values.each do |value|
-                  xml.Option {
-                    xml.Name  value.option_type.presentation
-                    xml.Value value.name
-                  }
-                end
-              }
-            end
-          }
+              if variant.option_values.present?
+                xml.Options {
+                  variant.option_values.each do |value|
+                    xml.Option {
+                      xml.Name  value.option_type.presentation
+                      xml.Value value.presentation
+                    }
+                  end
+                }
+              end
+            }
+          end
         end
       }
     }
