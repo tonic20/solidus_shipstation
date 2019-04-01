@@ -29,6 +29,23 @@ module Spree
     end
     # rubocop:enable all
 
+    def self.pnp_product_image(variant)
+      image = variant.images.first
+      return image.attachment(:product) if image
+
+      begin
+        if variant.color
+          color_id = variant.color.id
+          image = variant.product.thumbnails_by_color(color_id).first[:display_image]
+          image.attachment(:product) if image
+        else
+          image = variant.product.master.images.first
+          image.attachment(:product) if image
+        end
+      rescue
+        nil
+      end
+    end
   end
 
 end
