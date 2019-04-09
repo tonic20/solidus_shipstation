@@ -7,10 +7,13 @@ module Spree
     def initialize(params)
       @number   = params[:order_number]
       @tracking = params[:tracking_number]
+      @params = params
     end
 
     def apply
       find_shipment
+
+      ShipmentLog.log(@params, @shipment)
 
       unless shipment
         log_not_found
