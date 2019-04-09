@@ -7,7 +7,6 @@ module Spree
     def initialize(params)
       @number   = params[:order_number]
       @tracking = params[:tracking_number]
-      @params = params
     end
 
     def apply
