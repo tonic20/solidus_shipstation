@@ -21,6 +21,8 @@ module Spree
 
     # TODO: log when request are succeeding and failing
     def shipnotify
+      ShipmentLog.log(request)
+
       notice = Spree::ShipmentNotice.new(params)
 
       if notice.apply

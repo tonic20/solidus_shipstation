@@ -13,8 +13,6 @@ module Spree
     def apply
       find_shipment
 
-      ShipmentLog.log(@params, @shipment)
-
       unless shipment
         log_not_found
         return false
