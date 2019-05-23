@@ -31,7 +31,7 @@ xml.Orders(pages: (@shipments.total_count/50.0).ceil) {
       xml.Items {
         shipment.manifest.each do |manifest|
           line = manifest.line_item
-          variant = line.variant
+          variant = manifest.variant
           quantity = manifest.quantity - manifest.states.fetch('canceled', 0)
           if quantity > 0
             xml.Item {
