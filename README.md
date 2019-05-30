@@ -153,3 +153,4 @@ To run tests with guard:
 - Improve documentation
 - Update legacy development patterns (ex: `class_eval`)
 - Update XML generation and parsing
+
