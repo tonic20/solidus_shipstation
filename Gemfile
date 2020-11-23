@@ -1,28 +1,33 @@
+# frozen_string_literal: true
+
 source 'http://rubygems.org'
 
-branch = ENV.fetch('SOLIDUS_BRANCH', 'master')
-gem "solidus", github: "solidusio/solidus", branch: branch
+gemspec
+
+gem 'codeclimate-test-reporter', group: :test, require: nil
 gem 'guard', require: false
 gem 'guard-rspec', require: false
-gem 'pry-rails', require: false
-gem 'codeclimate-test-reporter', group: :test, require: nil
-
 gem 'pg', '~> 0.21'
-gem 'mysql2', '~> 0.4.10'
+gem 'pry-rails', require: false
+gem 'solidus', '< 3'
 
-group :development, :test do
-  if branch == 'master' || branch >= "v2.0"
-    gem "rails-controller-testing"
-  else
-    gem "rails_test_params_backport"
-  end
-
-  if branch < "v2.5"
-    gem 'factory_bot', '4.10.0'
-  else
-    gem 'factory_bot', '> 4.10.0'
-  end
+group :tools do
+  gem 'rubocop'
+  gem 'rubocop-rails'
+  gem 'rubocop-rspec'
 end
 
-
-gemspec
+group :development, :test do
+  gem 'capybara', '~> 2.2'
+  gem 'database_cleaner'
+  gem 'factory_bot'
+  gem 'ffaker'
+  gem 'pry'
+  gem 'rails-controller-testing'
+  gem 'rspec-rails', '~> 3'
+  gem 'rspec-xsd'
+  gem 'sass-rails'
+  gem 'simplecov'
+  gem 'sqlite3'
+  gem 'timecop'
+end

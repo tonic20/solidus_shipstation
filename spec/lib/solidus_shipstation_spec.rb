@@ -1,11 +1,17 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe SolidusShipstation do
+  describe '.config' do
+    subject { described_class.config }
 
-  describe 'VERSION' do
-    it 'is defined' do
-      expect(SolidusShipstation::VERSION).to be_present
+    specify :aggregate_failures do
+      is_expected.to respond_to(:username)
+      is_expected.to respond_to(:password)
+      is_expected.to respond_to(:weight_units)
+      is_expected.to respond_to(:ssl_encrypted)
+      is_expected.to respond_to(:capture_at_notification)
     end
   end
-
 end

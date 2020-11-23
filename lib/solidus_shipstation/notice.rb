@@ -1,8 +1,35 @@
-module Spree
+# frozen_string_literal: true
 
-  class ShipmentNotice
-
+module SolidusShipstation
+  class Notice
     attr_reader :error, :number, :tracking, :shipment
+
+    def self.call(params)
+      service = new(params)
+      result = service.apply
+      create_log(service, params, result)
+      result
+    end
+
+    def self.create_log(service, params, result)
+      if service.shipment
+        record = service.shipment.tracking_log || service.shipment.build_tracking_log
+        record.number = service.number
+      else
+        record = Spree::ShipmentTrackingLog.find_or_initialize_by(number: service.number)
+      end
+      record.carrier = params[:carrier]
+
+      record.data = {
+        response: params.except('action', 'format', 'controller', 'SS-Password', 'SS-UserName'),
+        processing: {
+          status: result ? :success : :fail,
+          error: service.error
+        }
+      }
+
+      record.save!
+    end
 
     def initialize(params)
       @number   = params[:order_number]
@@ -23,8 +50,10 @@ module Spree
       end
 
       ship_it!
-    rescue => e
-      handle_error(e)
+    rescue StandardError => e
+      @error = I18n.t(:import_tracking_error, error: error.to_s)
+      SolidusShipstation.track_error(@error, e)
+      false
     end
 
     private
@@ -34,7 +63,7 @@ module Spree
       return true if order.paid?
 
       # We try to capture payments if flag is set
-      if Spree::Config.shipstation_capture_at_notification
+      if SolidusShipstation.config.capture_at_notification
         process_payments!(order)
       else
         order.errors.add(:base, 'Capture is not enabled and order is not paid')
@@ -44,8 +73,10 @@ module Spree
 
     def process_payments!(order)
       order.payments.pending.each(&:capture!)
+      true
     rescue Core::GatewayError => e
-      order.errors.add(:base, e.message) and return false
+      order.errors.add(:base, e.message)
+      false
     end
 
     # TODO: add documentation
@@ -61,7 +92,7 @@ module Spree
 
       unless shipment.shipped?
         shipment.reload.ship!
-        shipment.touch :shipped_at
+        shipment.touch(:shipped_at)
         shipment.order.update!
       end
 
@@ -70,23 +101,14 @@ module Spree
 
     def log_not_found
       @error = I18n.t(:shipment_not_found, number: number)
-      Rails.logger.error(@error)
+      SolidusShipstation.track_error(@error)
     end
 
     def log_not_paid
       @error = I18n.t(:capture_payment_error,
                       number: number,
                       error: shipment.order.errors.full_messages.join(' '))
-      Rails.logger.error(@error)
+      SolidusShipstation.track_error(@error)
     end
-
-    def handle_error(error)
-      @error = I18n.t(:import_tracking_error, error: error.to_s)
-      Rails.logger.error(@error)
-
-      false
-    end
-
   end
-
 end

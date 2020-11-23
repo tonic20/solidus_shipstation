@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Run Coverage report
 require 'simplecov'
 SimpleCov.start do
@@ -13,7 +15,7 @@ end
 # Configure Rails Environment
 ENV['RAILS_ENV'] = 'test'
 
-require File.expand_path('../dummy/config/environment.rb', __FILE__)
+require File.expand_path('dummy/config/environment.rb', __dir__)
 
 require 'rspec/rails'
 require 'factory_bot'
@@ -24,12 +26,18 @@ FactoryBot.find_definitions
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
-Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].each { |f| require f }
+Dir[File.join(File.dirname(__FILE__), 'support/**/*.rb')].sort.each { |f| require f }
 
 # Requires factories defined in spree_core
 require 'spree/testing_support/factories'
 require 'spree/testing_support/controller_requests'
 require 'spree/testing_support/authorization_helpers'
+
+SolidusShipstation.setup do |config|
+  config.username = SecureRandom.hex
+  config.password = SecureRandom.hex
+  config.ssl_encrypted = false
+end
 
 RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
@@ -37,22 +45,7 @@ RSpec.configure do |config|
   config.include Spree::ShipmentHelper
   config.filter_run :focus
   config.run_all_when_everything_filtered = true
-
-  # == URL Helpers
-  #
-  # Allows access to Spree's routes in specs:
-  #
-  # visit spree.admin_path
-  # current_path.should eql(spree.products_path)
-  # config.include Spree::Core::UrlHelpers
-
-  # == Mock Framework
-  #
-  # If you prefer to use mocha, flexmock or RR, uncomment the appropriate line:
-  #
-  # config.mock_with :mocha
-  # config.mock_with :flexmock
-  # config.mock_with :rr
+  config.infer_spec_type_from_file_location!
   config.mock_with :rspec
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
@@ -67,15 +60,15 @@ RSpec.configure do |config|
     DatabaseCleaner.clean_with :truncation
   end
 
-  config.before(:each) do
+  config.before do
     DatabaseCleaner.strategy = :transaction
   end
 
-  config.before(:each) do
+  config.before do
     DatabaseCleaner.start
   end
 
-  config.after(:each) do
+  config.after do
     DatabaseCleaner.clean
   end
 end

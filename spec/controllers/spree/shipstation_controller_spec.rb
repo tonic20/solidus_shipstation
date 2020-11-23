@@ -1,18 +1,17 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-describe Spree::ShipstationController, type: :controller do
+describe Spree::ShipstationController do
   render_views
   routes { Spree::Core::Engine.routes }
 
   before do
-    Spree::Config.shipstation_ssl_encrypted = false # disable SSL for testing
-    allow(described_class).to receive(:check_authorization).and_return(false)
     allow(described_class).to receive(:spree_current_user).and_return(FactoryBot.create(:user))
     @request.env['HTTP_ACCEPT'] = 'application/xml'
   end
 
   context 'logged in' do
-
     before { login }
 
     describe '#export' do
@@ -30,7 +29,7 @@ describe Spree::ShipstationController, type: :controller do
       before { get :export, params: params }
 
       it 'renders successfully', :aggregate_failures do
-        expect(response).to be_success
+        expect(response.status).to eq(200)
         expect(response).to render_template(:export)
         expect(assigns(:shipments)).to match_array([shipments])
       end
@@ -48,9 +47,7 @@ describe Spree::ShipstationController, type: :controller do
       let(:order) { create(:order, payment_state: 'paid') }
       let!(:shipment) do
         shipment = create(:shipment, tracking: nil, number: order_number, order: order)
-        if shipment.has_attribute?(:address_id)
-          shipment.address_id = order.ship_address.id
-        end
+        shipment.address_id = order.ship_address.id if shipment.has_attribute?(:address_id)
         shipment.save
         shipment
       end
@@ -62,8 +59,8 @@ describe Spree::ShipstationController, type: :controller do
         end
 
         before do
-          allow(order).to receive(:can_ship?) { true }
-          allow(order).to receive(:paid?) { true }
+          allow(order).to receive(:can_ship?).and_return(true)
+          allow(order).to receive(:paid?).and_return(true)
           shipment.ready!
 
           post :shipnotify, params: params
@@ -76,7 +73,7 @@ describe Spree::ShipstationController, type: :controller do
         end
 
         it 'responds with success' do
-          expect(response).to be_success
+          expect(response.status).to eq(200)
         end
       end
 
@@ -84,10 +81,11 @@ describe Spree::ShipstationController, type: :controller do
         let(:invalid_params) do
           { order_number: 'JJ123456' }
         end
+
         before { post :shipnotify, params: invalid_params }
 
         it 'responds with failure' do
-          expect(response.code).to eq('400')
+          expect(response.status).to eq(400)
         end
       end
     end
@@ -97,21 +95,13 @@ describe Spree::ShipstationController, type: :controller do
     it 'returns error' do
       get :export, params: { format: 'xml' }
 
-      expect(response.code).to eq('401')
+      expect(response.status).to eq(401)
     end
   end
 
   def login
-    config(username: 'mario', password: 'lemieux')
-
-    user = 'mario'
-    pw = 'lemieux'
+    user = SolidusShipstation.config.username
+    pw = SolidusShipstation.config.password
     @request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials(user, pw)
-  end
-
-  def config(options = {})
-    options.each do |k, v|
-      Spree::Config.send("shipstation_#{k}=", v)
-    end
   end
 end
