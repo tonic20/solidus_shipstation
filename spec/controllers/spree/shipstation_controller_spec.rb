@@ -5,6 +5,12 @@ require 'spec_helper'
 describe Spree::ShipstationController do
   render_views
   routes { Spree::Core::Engine.routes }
+  let(:auth_params) do
+    {
+      SolidusShipstation.config.username_param => SolidusShipstation.config.username,
+      SolidusShipstation.config.password_param => SolidusShipstation.config.password
+    }
+  end
 
   before do
     allow(described_class).to receive(:spree_current_user).and_return(FactoryBot.create(:user))
@@ -12,8 +18,6 @@ describe Spree::ShipstationController do
   end
 
   context 'logged in' do
-    before { login }
-
     describe '#export' do
       let(:schema) { 'spec/fixtures/shipstation_xml_schema.xsd' }
       let(:order) { create(:order, state: 'complete', completed_at: Time.now.utc) }
@@ -23,7 +27,7 @@ describe Spree::ShipstationController do
           start_date: 1.day.ago.strftime('%m/%d/%Y %H:%M'),
           end_date: 1.day.from_now.strftime('%m/%d/%Y %H:%M'),
           format: 'xml'
-        }
+        }.merge!(auth_params)
       end
 
       before { get :export, params: params }
@@ -55,7 +59,7 @@ describe Spree::ShipstationController do
 
       context 'shipment found' do
         let(:params) do
-          { order_number: order_number, tracking_number: tracking_number }
+          { order_number: order_number, tracking_number: tracking_number }.merge!(auth_params)
         end
 
         before do
@@ -79,7 +83,7 @@ describe Spree::ShipstationController do
 
       context 'shipment not found' do
         let(:invalid_params) do
-          { order_number: 'JJ123456' }
+          { order_number: 'JJ123456' }.merge!(auth_params)
         end
 
         before { post :shipnotify, params: invalid_params }
@@ -97,11 +101,5 @@ describe Spree::ShipstationController do
 
       expect(response.status).to eq(401)
     end
-  end
-
-  def login
-    user = SolidusShipstation.config.username
-    pw = SolidusShipstation.config.password
-    @request.env['HTTP_AUTHORIZATION'] = ActionController::HttpAuthentication::Basic.encode_credentials(user, pw)
   end
 end

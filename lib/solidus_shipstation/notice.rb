@@ -21,7 +21,7 @@ module SolidusShipstation
       record.carrier = params[:carrier]
 
       record.data = {
-        response: params.except('action', 'format', 'controller', 'SS-Password', 'SS-UserName'),
+        response: params,
         processing: {
           status: result ? :success : :fail,
           error: service.error

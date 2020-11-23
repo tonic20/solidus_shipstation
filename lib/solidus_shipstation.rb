@@ -22,4 +22,8 @@ module SolidusShipstation
     Rails.logger.error(message)
     config.error_tracker.call(e) if e
   end
+
+  def self.valid_credentials?(params)
+    config.username == params[config.username_param] && config.password == params[config.password_param]
+  end
 end

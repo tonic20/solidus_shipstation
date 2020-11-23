@@ -22,11 +22,12 @@ module SolidusShipstation
     }.freeze
 
     preference :username,                :string
+    preference :username_param,          :string,  default: 'SS-UserName'
     preference :password,                :string
+    preference :password_param,          :string,  default: 'SS-Password'
     preference :weight_units,            :string
     preference :ssl_encrypted,           :boolean, default: true
     preference :capture_at_notification, :boolean, default: false
-    preference :basic_auth_enabled,      :boolean, default: true
     preference :carriers,                :hash,    default: DEFAULT_CARRIES.dup.with_indifferent_access
     preference :default_carrier,         :symbol,  default: :USPS
     preference :error_tracker,           :proc,    default: -> { proc {} }

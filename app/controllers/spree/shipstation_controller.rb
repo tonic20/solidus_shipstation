@@ -17,7 +17,7 @@ module Spree
     end
 
     def shipnotify
-      if SolidusShipstation::Notice.call(params)
+      if SolidusShipstation::Notice.call(notice_config)
         head :ok
       else
         head :bad_request
@@ -37,11 +37,12 @@ module Spree
     end
 
     def authenticate!
-      return unless SolidusShipstation.config.basic_auth_enabled
+      head 401 unless SolidusShipstation.valid_credentials?(params)
+    end
 
-      authenticate_or_request_with_http_basic do |username, password|
-        username == SolidusShipstation.config.username && password == SolidusShipstation.config.password
-      end
+    def notice_config
+      params.except('action', 'format', 'controller',
+        SolidusShipstation.config.username_param, SolidusShipstation.config.password_param)
     end
   end
 end
