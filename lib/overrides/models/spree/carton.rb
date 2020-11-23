@@ -2,7 +2,7 @@
 
 Spree::Carton.class_eval do
   def shipping_method_name
-    tracking_log&.shipping_method || selected_shipping_rate.name
+    tracking_log&.shipping_method || shipping_method.name
   end
 
   def tracking_url
@@ -13,6 +13,6 @@ Spree::Carton.class_eval do
 
   def tracking_log
     return @tracking_log if defined?(@tracking_log)
-    @tracking_log = Spree::ShipmentTrackingLog.find_by(shipment_id: shipments)
+    @tracking_log = shipments.first.tracking_log
   end
 end

@@ -4,7 +4,7 @@ Spree::Shipment.class_eval do
   has_one :tracking_log, class_name: '::Spree::ShipmentTrackingLog'
 
   def shipping_method_name
-    tracking_log&.shipping_method || selected_shipping_rate.name
+    tracking_log&.shipping_method || shipping_method.name
   end
 
   def tracking_url
