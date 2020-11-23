@@ -7,7 +7,6 @@ require 'spree/testing_support/extension_rake'
 
 RSpec::Core::RakeTask.new(:spec)
 RuboCop::RakeTask.new
-Bundler::GemHelper.install_tasks
 
 task :default do
   if Dir['spec/dummy'].empty?
@@ -31,3 +30,6 @@ task :console do
   ARGV.clear
   Rails::Command.invoke 'console'
 end
+
+
+task release: [:'release:source_control_push']
