@@ -3,7 +3,7 @@
 Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.name        = 'solidus_shipstation'
-  s.version     = '1.0.2.paragon'
+  s.version     = '1.0.3.paragon'
   s.summary     = 'Solidus/ShipStation Integration'
   s.description = 'Integrates ShipStation API with Solidus. Supports exporting shipments and importing tracking numbers'
   s.required_ruby_version = '>= 2.6.0'
