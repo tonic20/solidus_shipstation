@@ -2,10 +2,8 @@
 
 module Spree
   class ShipmentTrackingLog < ApplicationRecord
-    Carrier = Struct.new(:name, :tracking_url) do
-      def build_tracking_url(*args, &block)
-        ShippingMethod.instance_method(:build_tracking_url).bind(self).call(*args, &block)
-      end
+    Carrier = Struct.new(:name, :shipping_method) do
+      delegate :build_tracking_url, to: :shipping_method
     end
 
     belongs_to :shipment, optional: true
@@ -16,7 +14,7 @@ module Spree
 
       data = SolidusShipstation.config.carriers[super]
       data ||= SolidusShipstation.config.carriers[SolidusShipstation.config.default_carrier]
-      @_carrier = Carrier.new(data[:name], data[:tracking_url])
+      @_carrier = Carrier.new(data[:name], ShippingMethod.new(tracking_url: data[:tracking_url]))
     end
 
     def carrier=(value)

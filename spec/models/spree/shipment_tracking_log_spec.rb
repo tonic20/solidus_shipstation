@@ -8,4 +8,8 @@ RSpec.describe Spree::ShipmentTrackingLog do
     subject.carrier = :UPSMI
     expect(subject.carrier.name).to eq('UPS Mail Innovations')
   end
+
+  specify '#build_tracking_url' do
+    expect(subject.build_tracking_url('abc')).to match(/http.*abc.*/)
+  end
 end
