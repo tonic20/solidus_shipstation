@@ -2,43 +2,50 @@
 
 module SolidusShipstation
   class Notice
-    attr_reader :error, :number, :tracking, :shipment
+    attr_reader :error, :number, :tracking, :log, :shipment
+    delegate :order, to: :shipment
 
     def self.call(params)
-      service = new(params)
-      result = service.apply
-      create_log(service, params, result)
-      result
-    end
-
-    def self.create_log(service, params, result)
-      if service.shipment
-        record = service.shipment.tracking_log || service.shipment.build_tracking_log
-        record.number = service.number
-      else
-        record = Spree::ShipmentTrackingLog.find_or_initialize_by(number: service.number)
-      end
-      record.carrier = params[:carrier]
-
-      record.data = {
-        response: params,
-        processing: {
-          status: result ? :success : :fail,
-          error: service.error
-        }
-      }
-
-      record.save!
+      new(params).call
     end
 
     def initialize(params)
       @number   = params[:order_number]
       @tracking = params[:tracking_number]
+      @shipment = Spree::Shipment.find_by(number: number)
+      @log = prepare_log(@shipment, @number, params)
     end
 
-    def apply
-      find_shipment
+    def call
+      log.save!
 
+      if _call
+        log.data[:processing] = { status: :success }
+        log.save!
+        true
+      else
+        log.data[:processing] = { status: :fail, error: error }
+        log.save!
+        false
+      end
+    end
+
+    private
+
+    def prepare_log(shipment, number, params)
+      if shipment
+        record = shipment.tracking_log || shipment.build_tracking_log
+        record.number = number
+      else
+        record = Spree::ShipmentTrackingLog.find_or_initialize_by(number: number)
+      end
+      record.data ||= {}
+      record.data[:response] = params
+      record.carrier = params[:carrier]
+      record
+    end
+
+    def _call
       unless shipment
         log_not_found
         return false
@@ -56,22 +63,19 @@ module SolidusShipstation
       false
     end
 
-    private
-
     def capture_payments!
-      order = shipment.order
       return true if order.paid?
 
       # We try to capture payments if flag is set
       if SolidusShipstation.config.capture_at_notification
-        process_payments!(order)
+        process_payments!
       else
         order.errors.add(:base, 'Capture is not enabled and order is not paid')
         false
       end
     end
 
-    def process_payments!(order)
+    def process_payments!
       order.payments.pending.each(&:capture!)
       true
     rescue Core::GatewayError => e
@@ -79,14 +83,6 @@ module SolidusShipstation
       false
     end
 
-    # TODO: add documentation
-    # => <Shipment>
-    def find_shipment
-      @shipment = Spree::Shipment.find_by(number: number)
-    end
-
-    # TODO: add documentation
-    # => true
     def ship_it!
       shipment.update_attribute(:tracking, tracking)
 
@@ -107,7 +103,7 @@ module SolidusShipstation
     def log_not_paid
       @error = I18n.t(:capture_payment_error,
                       number: number,
-                      error: shipment.order.errors.full_messages.join(' '))
+                      error: order.errors.full_messages.join(' '))
       SolidusShipstation.track_error(@error)
     end
   end
